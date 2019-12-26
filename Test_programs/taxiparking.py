@@ -15,3 +15,9 @@ while i<5:
     print("action space {}".format(env.action_space))
     print("observation space {}".format(env.observation_space))
     i+=1
+    
+print('state space')
+state=env.encode(3,1,2,0)
+print('state',state)
+env.s=state
+env.render()
