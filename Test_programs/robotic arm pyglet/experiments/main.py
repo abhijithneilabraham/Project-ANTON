@@ -8,7 +8,7 @@ from rl import DDPG
 
 MAX_EPISODES = 900
 MAX_EP_STEPS = 200
-ON_TRAIN = True
+ON_TRAIN = False
 
 # set env
 env = ArmEnv()

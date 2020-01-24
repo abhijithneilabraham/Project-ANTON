@@ -7,7 +7,7 @@ class ArmEnv(object):
     dt = .1    # refresh rate
     action_bound = [-1,1]
     goal = {'x': 100., 'y': 100., 'l': 40}
-    state_dim = 9
+    state_dim = 13
     action_dim = 3
 
     def __init__(self):
