@@ -1,11 +1,6 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jan 24 00:14:25 2020
-
-@author: abhijithneilabraham
-"""
 import gym
-env = gym.make("FetchPickAndPlace-v1")
-observation = env.reset()
-env.render()
+env=gym.make('FetchReach-v1')
+env.reset()
+obs,reward,done,info=env.step(env.action_space.sample())
+reward=env.compute_reward(obs['achieved_goal'],obs['desired_goal'],info)
+print(reward)
