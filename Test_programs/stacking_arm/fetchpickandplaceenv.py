@@ -20,7 +20,7 @@ def train():
         for j in range(MAX_EP_STEPS):
             # env.render()
 
-            a = env.action_space.sample()
+            a = rl.choose
 
             s_, r, done,info = env.step(a)
 
