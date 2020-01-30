@@ -48,7 +48,7 @@ def train():
 def eval():
     rl.restore()
     env.render()
-    env.viewer.set_vsync(False)
+    env.viewer.set_vsync(True)
     s = env.reset()
     while True:
         env.render()
