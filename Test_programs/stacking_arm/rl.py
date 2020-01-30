@@ -1,160 +1,104 @@
-""" Generic Rules for SymPy
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+import numpy as np
 
-This file assumes knowledge of Basic and little else.
-"""
-from __future__ import print_function, division
+#####################  hyper parameters  ####################
 
-from sympy.utilities.iterables import sift
-from .util import new
+LR_A = 0.001    # learning rate for actor
+LR_C = 0.001    # learning rate for critic
+GAMMA = 0.9     # reward discount
+TAU = 0.01      # soft replacement
+MEMORY_CAPACITY = 30000
+BATCH_SIZE = 32
 
-# Functions that create rules
 
-def rm_id(isid, new=new):
-    """ Create a rule to remove identities
+class DDPG(object):
+    def __init__(self, a_dim, s_dim, a_bound,):
+        self.memory = np.zeros((MEMORY_CAPACITY, s_dim * 2 + a_dim + 1), dtype=np.float32)
+        self.pointer = 0
+        self.memory_full = False
+        self.sess = tf.Session()
+        self.a_replace_counter, self.c_replace_counter = 0, 0
 
-    isid - fn :: x -> Bool  --- whether or not this element is an identity
+        self.a_dim, self.s_dim, self.a_bound = a_dim, s_dim, a_bound[1]
+        self.S = tf.placeholder(tf.float32, [None, s_dim], 's')
+        self.S_ = tf.placeholder(tf.float32, [None, s_dim], 's_')
+        self.R = tf.placeholder(tf.float32, [None, 1], 'r')
 
-    >>> from sympy.strategies import rm_id
-    >>> from sympy import Basic
-    >>> remove_zeros = rm_id(lambda x: x==0)
-    >>> remove_zeros(Basic(1, 0, 2))
-    Basic(1, 2)
-    >>> remove_zeros(Basic(0, 0)) # If only identites then we keep one
-    Basic(0)
+        with tf.variable_scope('Actor'):
+            self.a = self._build_a(self.S, scope='eval', trainable=True)
+            a_ = self._build_a(self.S_, scope='target', trainable=False)
+        with tf.variable_scope('Critic'):
+            # assign self.a = a in memory when calculating q for td_error,
+            # otherwise the self.a is from Actor when updating Actor
+            q = self._build_c(self.S, self.a, scope='eval', trainable=True)
+            q_ = self._build_c(self.S_, a_, scope='target', trainable=False)
 
-    See Also:
-        unpack
-    """
-    def ident_remove(expr):
-        """ Remove identities """
-        ids = list(map(isid, expr.args))
-        if sum(ids) == 0:           # No identities. Common case
-            return expr
-        elif sum(ids) != len(ids):  # there is at least one non-identity
-            return new(expr.__class__,
-                       *[arg for arg, x in zip(expr.args, ids) if not x])
-        else:
-            return new(expr.__class__, expr.args[0])
+        # networks parameters
+        self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
+        self.at_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target')
+        self.ce_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval')
+        self.ct_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target')
 
-    return ident_remove
+        # target net replacement
+        self.soft_replace = [[tf.assign(ta, (1 - TAU) * ta + TAU * ea), tf.assign(tc, (1 - TAU) * tc + TAU * ec)]
+                             for ta, ea, tc, ec in zip(self.at_params, self.ae_params, self.ct_params, self.ce_params)]
 
-def glom(key, count, combine):
-    """ Create a rule to conglomerate identical args
+        q_target = self.R + GAMMA * q_
+        # in the feed_dic for the td_error, the self.a should change to actions in memory
+        td_error = tf.losses.mean_squared_error(labels=q_target, predictions=q)
+        self.ctrain = tf.train.AdamOptimizer(LR_C).minimize(td_error, var_list=self.ce_params)
 
-    >>> from sympy.strategies import glom
-    >>> from sympy import Add
-    >>> from sympy.abc import x
+        a_loss = - tf.reduce_mean(q)    # maximize the q
+        self.atrain = tf.train.AdamOptimizer(LR_A).minimize(a_loss, var_list=self.ae_params)
 
-    >>> key     = lambda x: x.as_coeff_Mul()[1]
-    >>> count   = lambda x: x.as_coeff_Mul()[0]
-    >>> combine = lambda cnt, arg: cnt * arg
-    >>> rl = glom(key, count, combine)
+        self.sess.run(tf.global_variables_initializer())
 
-    >>> rl(Add(x, -x, 3*x, 2, 3, evaluate=False))
-    3*x + 5
+    def choose_action(self, s):
+        return self.sess.run(self.a, {self.S: s[None, :]})[0]
 
-    Wait, how are key, count and combine supposed to work?
+    def learn(self):
+        # soft target replacement
+        self.sess.run(self.soft_replace)
 
-    >>> key(2*x)
-    x
-    >>> count(2*x)
-    2
-    >>> combine(2, x)
-    2*x
-    """
-    def conglomerate(expr):
-        """ Conglomerate together identical args x + x -> 2x """
-        groups = sift(expr.args, key)
-        counts = dict((k, sum(map(count, args))) for k, args in groups.items())
-        newargs = [combine(cnt, mat) for mat, cnt in counts.items()]
-        if set(newargs) != set(expr.args):
-            return new(type(expr), *newargs)
-        else:
-            return expr
+        indices = np.random.choice(MEMORY_CAPACITY, size=BATCH_SIZE)
+        bt = self.memory[indices, :]
+        bs = bt[:, :self.s_dim]
+        ba = bt[:, self.s_dim: self.s_dim + self.a_dim]
+        br = bt[:, -self.s_dim - 1: -self.s_dim]
+        bs_ = bt[:, -self.s_dim:]
 
-    return conglomerate
+        self.sess.run(self.atrain, {self.S: bs})
+        self.sess.run(self.ctrain, {self.S: bs, self.a: ba, self.R: br, self.S_: bs_})
 
-def sort(key, new=new):
-    """ Create a rule to sort by a key function
+    def store_transition(self, s, a, r, s_):
+        transition = np.hstack((s, a, [r], s_))
+        index = self.pointer % MEMORY_CAPACITY  # replace the old memory with new memory
+        self.memory[index, :] = transition
+        self.pointer += 1
+        if self.pointer > MEMORY_CAPACITY:      # indicator for learning
+            self.memory_full = True
 
-    >>> from sympy.strategies import sort
-    >>> from sympy import Basic
-    >>> sort_rl = sort(str)
-    >>> sort_rl(Basic(3, 1, 2))
-    Basic(1, 2, 3)
-    """
+    def _build_a(self, s, scope, trainable):
+        with tf.variable_scope(scope):
+            net = tf.layers.dense(s, 300, activation=tf.nn.relu, name='l1', trainable=trainable)
+            a = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, name='a', trainable=trainable)
+            return tf.multiply(a, self.a_bound, name='scaled_a')
 
-    def sort_rl(expr):
-        return new(expr.__class__, *sorted(expr.args, key=key))
-    return sort_rl
+    def _build_c(self, s, a, scope, trainable):
+        with tf.variable_scope(scope):
+            n_l1 = 300
+            w1_s = tf.get_variable('w1_s', [self.s_dim, n_l1], trainable=trainable)
+            w1_a = tf.get_variable('w1_a', [self.a_dim, n_l1], trainable=trainable)
+            b1 = tf.get_variable('b1', [1, n_l1], trainable=trainable)
+            net = tf.nn.relu(tf.matmul(s, w1_s) + tf.matmul(a, w1_a) + b1)
+            return tf.layers.dense(net, 1, trainable=trainable)  # Q(s,a)
 
-def distribute(A, B):
-    """ Turns an A containing Bs into a B of As
+    def save(self):
+        saver = tf.train.Saver()
+        saver.save(self.sess, './params', write_meta_graph=False)
 
-    where A, B are container types
+    def restore(self):
+        saver = tf.train.Saver()
+        saver.restore(self.sess, './params')
 
-    >>> from sympy.strategies import distribute
-    >>> from sympy import Add, Mul, symbols
-    >>> x, y = symbols('x,y')
-    >>> dist = distribute(Mul, Add)
-    >>> expr = Mul(2, x+y, evaluate=False)
-    >>> expr
-    2*(x + y)
-    >>> dist(expr)
-    2*x + 2*y
-    """
-
-    def distribute_rl(expr):
-        for i, arg in enumerate(expr.args):
-            if isinstance(arg, B):
-                first, b, tail = expr.args[:i], expr.args[i], expr.args[i+1:]
-                return B(*[A(*(first + (arg,) + tail)) for arg in b.args])
-        return expr
-    return distribute_rl
-
-def subs(a, b):
-    """ Replace expressions exactly """
-    def subs_rl(expr):
-        if expr == a:
-            return b
-        else:
-            return expr
-    return subs_rl
-
-# Functions that are rules
-
-def unpack(expr):
-    """ Rule to unpack singleton args
-
-    >>> from sympy.strategies import unpack
-    >>> from sympy import Basic
-    >>> unpack(Basic(2))
-    2
-    """
-    if len(expr.args) == 1:
-        return expr.args[0]
-    else:
-        return expr
-
-def flatten(expr, new=new):
-    """ Flatten T(a, b, T(c, d), T2(e)) to T(a, b, c, d, T2(e)) """
-    cls = expr.__class__
-    args = []
-    for arg in expr.args:
-        if arg.__class__ == cls:
-            args.extend(arg.args)
-        else:
-            args.append(arg)
-    return new(expr.__class__, *args)
-
-def rebuild(expr):
-    """ Rebuild a SymPy tree
-
-    This function recursively calls constructors in the expression tree.
-    This forces canonicalization and removes ugliness introduced by the use of
-    Basic.__new__
-    """
-    try:
-        return type(expr)(*list(map(rebuild, expr.args)))
-    except Exception:
-        return expr

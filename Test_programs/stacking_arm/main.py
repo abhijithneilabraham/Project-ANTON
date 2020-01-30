@@ -19,6 +19,7 @@ a_bound = env.action_bound
 rl = DDPG(a_dim, s_dim, a_bound)
 
 steps = []
+print(s_dim)
 def train():
     # start training
     for i in range(MAX_EPISODES):
@@ -56,10 +57,10 @@ def eval():
         s, r, done = env.step(a)
 
 
-if ON_TRAIN:
-    train()
-else:
-    eval()
+#if ON_TRAIN:
+#    train()
+#else:
+#    eval()
 
 
 
