@@ -14,11 +14,11 @@ from stable_baselines import DDPG
 env = gym.make('FetchPickAndPlace-v1')
 #
 ## the noise objects for DDPG
-from stable_baselines import HER, DQN, SAC, DDPG, TD3
+from stable_baselines import HER, SAC, DDPG, TD3
 from stable_baselines.her import GoalSelectionStrategy, HERGoalEnvWrapper
 from stable_baselines.common.bit_flipping_env import BitFlippingEnv
 
-model_class = TD3  # works also with SAC, DDPG and TD3
+model_class = DDPG  # works also with SAC, DDPG and TD3
 
 
 
@@ -26,10 +26,10 @@ model_class = TD3  # works also with SAC, DDPG and TD3
 goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
 
 # Wrap the model
-model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy,
-                                                verbose=1)
+model = HER('LnMlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy,
+                                                verbose=0)
 # Train the model
-model.learn(3000)
+model.learn(5000)
 
 model.save("./pickplace")
 '''
