@@ -11,7 +11,7 @@ import numpy as np
 
 from stable_baselines import DDPG
 
-env = gym.make('FetchPickAndPlace-v1')
+env = gym.make('FetchReach-v1')
 #
 ## the noise objects for DDPG
 from stable_baselines import HER, SAC, DDPG, TD3
@@ -29,7 +29,7 @@ goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
 model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy,
                                                 verbose=1)
 # Train the model
-model.learn(25000,log_interval=1000,reset_num_timesteps=True)
+model.learn(5000,log_interval=1000,reset_num_timesteps=True)
 
 model.save("./pickplace5m")
 '''
