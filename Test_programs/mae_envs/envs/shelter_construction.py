@@ -186,3 +186,4 @@ def make_env(n_substeps=15, horizon=80, deterministic_mode=False,
                             keys_mask=keys_mask_self + keys_mask_external,
                             flatten=False)
     return env
+make_env()
