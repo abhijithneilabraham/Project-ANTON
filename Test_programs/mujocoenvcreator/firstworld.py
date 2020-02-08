@@ -9,12 +9,16 @@ Created on Sat Feb  8 00:01:06 2020
 from stable_baselines import HER, DQN, SAC, DDPG, TD3
 from stable_baselines.her import GoalSelectionStrategy, HERGoalEnvWrapper
 from stable_baselines.common.bit_flipping_env import BitFlippingEnv
-from blueprint_construction import make_env
+from mujoco_worldgen.util.envs import examine_env, load_env
 
 model_class = DDPG  # works also with SAC, DDPG and TD3
-
-env =make_env()
-
+env_name='blueprint_construction'
+core_dir ='/Users/abhijithneilabraham/Documents/GitHub/multi-agent-emergence-environments/'
+envs_dir = 'mae_envs/envs'
+xmls_dir = 'xmls'
+env,_=load_env(env_name, core_dir=core_dir,
+                                           envs_dir=envs_dir, xmls_dir=xmls_dir,
+                                           return_args_remaining=True)
 # Available strategies (cf paper): future, final, episode, random
 goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
 
