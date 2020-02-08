@@ -9,9 +9,9 @@ Created on Sat Feb  8 00:01:06 2020
 from stable_baselines import HER, DQN, SAC, DDPG, TD3
 from stable_baselines.her import GoalSelectionStrategy, HERGoalEnvWrapper
 from stable_baselines.common.bit_flipping_env import BitFlippingEnv
-from blueprint_construction import make_env
+from blueprint_construction.ConstructionCompletedRewardWrapper import make_env
 
-model_class = DDPG  # works also with SAC, DDPG and TD3
+model_class = DQN  # works also with SAC, DDPG and TD3
 
 env =make_env()
 
