@@ -32,7 +32,7 @@ def main():
         bin/examine.py my_env_jsonnet.jsonnet my_policy.npz
         bin/examine.py hide_and_seek my_policy.npz n_hiders=3 n_seekers=2 n_boxes=8 n_ramps=1
     '''
-    name="blueprint_construction"
+    name="hide_and_seek"
 
     env_name = name
     core_dir ='/Users/abhijithneilabraham/Documents/GitHub/Project-ANTON/Test_programs/mujocoenvcreator/multi-agent-emergence-environments/'
@@ -41,9 +41,9 @@ def main():
     kwargs={}
 
   # examine the environment
-    examine_env(env_name, kwargs,
-                core_dir=core_dir, envs_dir=envs_dir, xmls_dir=xmls_dir,
-                env_viewer=EnvViewer)
+    env,_=load_env(env_name, core_dir=core_dir,
+                                           envs_dir=envs_dir, xmls_dir=xmls_dir,
+                                           return_args_remaining=True, **kwargs)
 
 
 
