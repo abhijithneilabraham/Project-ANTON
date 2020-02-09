@@ -12,41 +12,52 @@ from mujoco_worldgen.util.types import extract_matching_arguments
 from mujoco_worldgen.util.parse_arguments import parse_arguments
 
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
+from stable_baselines import HER, DQN, SAC, DDPG, TD3
+from stable_baselines.her import GoalSelectionStrategy, HERGoalEnvWrapper
 
 
-#@click.command()
-#@click.argument('argv', nargs=-1, required=False)
-def main():
-    '''
-    examine.py is used to display environments and run policies.
+model_class = DDPG  # works also with SAC, DDPG and TD3
+env_name = "hide_and_seek"
+kwargs={}
+core_dir ='/Users/abhijithneilabraham/Documents/GitHub/multi-agent-emergence-environments/'
+envs_dir = 'mae_envs/envs'
+xmls_dir = 'xmls'
 
-    For an example environment jsonnet, see
-        mujoco-worldgen/examples/example_env_examine.jsonnet
-    You can find saved policies and the in the 'examples' together with the environment they were
-    trained in and the hyperparameters used. The naming used is 'examples/<env_name>.jsonnet' for
-    the environment jsonnet file and 'examples/<env_name>.npz' for the policy weights file.
-    Example uses:
-        bin/examine.py hide_and_seek
-        bin/examine.py mae_envs/envs/base.py
-        bin/examine.py base n_boxes=6 n_ramps=2 n_agents=3
-        bin/examine.py my_env_jsonnet.jsonnet
-        bin/examine.py my_env_jsonnet.jsonnet my_policy.npz
-        bin/examine.py hide_and_seek my_policy.npz n_hiders=3 n_seekers=2 n_boxes=8 n_ramps=1
-    '''
-#    names, kwargs = parse_arguments(argv)
 
-    env_name = "hide_and_seek"
-    kwargs={}
-    core_dir ='/Users/abhijithneilabraham/Documents/GitHub/multi-agent-emergence-environments/'
-    envs_dir = 'mae_envs/envs'
-    xmls_dir = 'xmls'
+env,_=load_env(env_name, core_dir=core_dir,
+                                   envs_dir=envs_dir, xmls_dir=xmls_dir,
+                                   return_args_remaining=True, **kwargs)
 
-      # examine the environment
-    env,_=load_env(env_name, core_dir=core_dir,
-                                       envs_dir=envs_dir, xmls_dir=xmls_dir,
-                                       return_args_remaining=True, **kwargs)
+# Available strategies (cf paper): future, final, episode, random
+goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
 
+# Wrap the model
+model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy,
+                                                verbose=1)
+# Train the model
+model.learn(1000)
+
+model.save("./hideandseek")
+
+# WARNING: you must pass an env
+# or wrap your environment with HERGoalEnvWrapper to use the predict method
+model = HER.load('./hideandseek', env=env)
+
+obs = env.reset()
+for _ in range(100):
+    action, _ = model.predict(obs)
+    obs, reward, done, _ = env.step(action)
+
+    if done:
+        obs = env.reset()
+
+
+
+
+   
+
+    
 
 
 #    print(main.__doc__)
