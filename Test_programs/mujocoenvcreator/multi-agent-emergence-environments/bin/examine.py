@@ -14,7 +14,11 @@ from mujoco_worldgen.util.parse_arguments import parse_arguments
 
 #logger = logging.getLogger(__name__)
 from stable_baselines import HER, DQN, SAC, DDPG, TD3
+
+from stable_baselines.ddpg.policies import MlpPolicy
 from stable_baselines.her import GoalSelectionStrategy, HERGoalEnvWrapper
+from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
+from stable_baselines import A2C
 
 
 model_class = DDPG  # works also with SAC, DDPG and TD3
@@ -33,8 +37,10 @@ env,_=load_env(env_name, core_dir=core_dir,
 goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
 
 # Wrap the model
-model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy,
-                                                verbose=1)
+n_actions=3
+action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
+
+model = DDPG(MlpPolicy, env, verbose=1, param_noise=None, action_noise=action_noise)
 # Train the model
 model.learn(1000)
 
@@ -67,4 +73,4 @@ for _ in range(100):
 #    logging.getLogger('').handlers = []
 #    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
 
-main()
+#main()
