@@ -5,13 +5,14 @@ from os.path import abspath, dirname, join
 from gym.spaces import Tuple
 
 from mae_envs.viewer.env_viewer import EnvViewer
+from mae_envs.envs.blueprint_construction import make_env
 from mae_envs.wrappers.multi_agent import JoinMultiAgentActions
 from mujoco_worldgen.util.envs import examine_env, load_env
 from mujoco_worldgen.util.types import extract_matching_arguments
 
 
 
-logger = logging.getLogger(__name__)
+
 
 
 
@@ -34,16 +35,16 @@ def main():
     '''
     name="hide_and_seek"
 
-    env_name = name
-    core_dir ='/Users/abhijithneilabraham/Documents/GitHub/Project-ANTON/Test_programs/mujocoenvcreator/multi-agent-emergence-environments/'
-    envs_dir = 'mae_envs/envs'
-    xmls_dir = 'xmls'
-    kwargs={}
-
+#    env_name = name
+#    core_dir ='/Users/abhijithneilabraham/Documents/GitHub/Project-ANTON/Test_programs/mujocoenvcreator/multi-agent-emergence-environments/'
+#    envs_dir = 'mae_envs/envs'
+#    xmls_dir = 'xmls'
+#    kwargs={}
+    env=make_env()
   # examine the environment
-    env,_=load_env(env_name, core_dir=core_dir,
-                                           envs_dir=envs_dir, xmls_dir=xmls_dir,
-                                           return_args_remaining=True, **kwargs)
+#    examine_env(env_name, kwargs,
+#                    core_dir=core_dir, envs_dir=envs_dir, xmls_dir=xmls_dir,
+#                    env_viewer=EnvViewer)
 
 
 
