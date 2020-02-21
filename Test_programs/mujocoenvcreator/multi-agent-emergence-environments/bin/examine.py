@@ -10,21 +10,22 @@ from mae_envs.wrappers.multi_agent import JoinMultiAgentActions
 from mujoco_worldgen.util.envs import examine_env, load_env
 from mujoco_worldgen.util.types import extract_matching_arguments
 from mujoco_worldgen.util.parse_arguments import parse_arguments
-
+from stable_baselines import DDPG
 
 #logger = logging.getLogger(__name__)
 from stable_baselines import HER, DQN, SAC, DDPG, TD3
 
-from stable_baselines.ddpg.policies import MlpPolicy
+
+from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy, MlpLnLstmPolicy
 from stable_baselines.her import GoalSelectionStrategy, HERGoalEnvWrapper
 from stable_baselines.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise, AdaptiveParamNoiseSpec
-from stable_baselines import A2C
+from stable_baselines import A2C,ACER
 
 
 model_class = DDPG  # works also with SAC, DDPG and TD3
 env_name = "hide_and_seek"
 kwargs={}
-core_dir ='/Users/abhijithneilabraham/Documents/GitHub/multi-agent-emergence-environments/'
+core_dir ='/Users/abhijithneilabraham/Documents/GitHub/Project-ANTON/Test_programs/mujocoenvcreator/multi-agent-emergence-environments'
 envs_dir = 'mae_envs/envs'
 xmls_dir = 'xmls'
 
@@ -33,13 +34,18 @@ env,_=load_env(env_name, core_dir=core_dir,
                                    envs_dir=envs_dir, xmls_dir=xmls_dir,
                                    return_args_remaining=True, **kwargs)
 
+#env = JoinMultiAgentActions(env)
 # Available strategies (cf paper): future, final, episode, random
 goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
 
 # Wrap the model
 n_actions=3
+print(env.action_space)
+if isinstance(env.action_space, Tuple):
+    env = JoinMultiAgentActions(env)
+print(env.action_space)
 action_noise = OrnsteinUhlenbeckActionNoise(mean=np.zeros(n_actions), sigma=float(0.5) * np.ones(n_actions))
-
+ 
 model = DDPG(MlpPolicy, env, verbose=1, param_noise=None, action_noise=action_noise)
 # Train the model
 model.learn(1000)

@@ -10,17 +10,17 @@ import gym
 import numpy as np
 
 from stable_baselines.sac.policies import MlpPolicy
-from stable_baselines import SAC
+from stable_baselines import SAC,DDPG
 
-env = gym.make('FetchReach-v1')
+env = gym.make('FetchPush-v1')
 
-model = SAC(MlpPolicy, env, verbose=1)
+model = DDPG(MlpPolicy, env, verbose=1)
 model.learn(total_timesteps=50000, log_interval=10)
 model.save("sac_fetchpp")
 
 del model # remove to demonstrate saving and loading
 
-model = SAC.load("sac_fetchpp")
+model = DDPG.load("sac_fetchpp")
 
 obs = env.reset()
 while True:

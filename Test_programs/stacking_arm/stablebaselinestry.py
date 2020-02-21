@@ -11,7 +11,7 @@ import numpy as np
 
 from stable_baselines import DDPG
 
-env = gym.make('FetchReach-v1')
+env = gym.make('FetchPush-v1')
 #
 ## the noise objects for DDPG
 from stable_baselines import HER, SAC, DDPG, TD3
@@ -29,20 +29,21 @@ goal_selection_strategy = 'future' # equivalent to GoalSelectionStrategy.FUTURE
 model = HER('MlpPolicy', env, model_class, n_sampled_goal=4, goal_selection_strategy=goal_selection_strategy,
                                                 verbose=1)
 # Train the model
-model.learn(5000,log_interval=1000,reset_num_timesteps=True)
+model.learn(10,log_interval=1000,reset_num_timesteps=True)
 
-model.save("./pickplace5m")
+model.save("./Fetchpush")
 '''
  WARNING: you must pass an env
  or wrap your environment with HERGoalEnvWrapper to use the predict method
  '''
-model = HER.load('./pickplace5m', env=env)
+model = HER.load('./Fetchpush', env=env)
 
 obs = env.reset()
 #obs=[50 for i in range(31)]
 while True:
     action, _ = model.predict(obs)
     obs, reward, done, _ = env.step(action)
+    print(action)
     env.render()
     if done:
         obs=env.reset()
