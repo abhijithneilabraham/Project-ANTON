@@ -7,7 +7,7 @@ Created on Thu Feb 27 16:57:13 2020
 """
 
 import numpy as np
-from mujoco_worldgen import Env, WorldParams, WorldBuilder, Floor, ObjFromXML
+from mujoco_worldgen import Env, WorldParams, WorldBuilder, Floor, ObjFromXML,Geom
 
 
 def get_reward(sim):
@@ -23,6 +23,24 @@ def get_sim(seed):
     floor = Floor()
     builder.append(floor)
     obj = ObjFromXML("particle_hinge")
+    floor.append(obj)
+    floorsize=4.
+    # Walls
+    wallsize = 0.1
+    wall = Geom('box', (wallsize, floorsize, 0.5), name="wall1")
+    wall.mark_static()
+    floor.append(wall, placement_xy=(0, 0))
+    wall = Geom('box', (wallsize, floorsize, 0.5), name="wall2")
+    wall.mark_static()
+    floor.append(wall, placement_xy=(1, 0))
+    wall = Geom('box', (floorsize - wallsize*2, wallsize, 0.5), name="wall3")
+    wall.mark_static()
+    floor.append(wall, placement_xy=(1/2, 0))
+    wall = Geom('box', (floorsize - wallsize*2, wallsize, 0.5), name="wall4")
+    wall.mark_static()
+    floor.append(wall, placement_xy=(1/2, 1))
+    # Add agents
+    obj = ObjFromXML("particle", name="agent0")
     floor.append(obj)
     obj.mark("object")
     floor.mark("target", (.5,   .5, 0.05))
