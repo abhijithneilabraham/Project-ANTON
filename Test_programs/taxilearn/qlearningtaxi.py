@@ -1,18 +1,18 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jan  8 16:02:15 2020
-
-@author: abhijithneilabraham
-"""
+##!/usr/bin/env python3
+## -*- coding: utf-8 -*-
+#"""
+#Created on Wed Jan  8 16:02:15 2020
+#
+#@author: abhijithneilabraham
+#"""
 
 import numpy as np
+
+import random
+from IPython.display import clear_output
 import gym
 env=gym.make("Taxi-v2").env
-q_table=np.zeros([env.observation_space.n,env.action_space.n])
-import random
-
-
+q_table = np.zeros([env.observation_space.n, env.action_space.n])
 # Hyperparameters
 alpha = 0.1
 gamma = 0.6
@@ -22,7 +22,7 @@ epsilon = 0.1
 all_epochs = []
 all_penalties = []
 
-for i in range(1, 100):
+for i in range(1, 100001):
     state = env.reset()
 
     epochs, penalties, reward, = 0, 0, 0
@@ -49,16 +49,23 @@ for i in range(1, 100):
         epochs += 1
         
     if i % 100 == 0:
-      
+        clear_output(wait=True)
         print(f"Episode: {i}")
 
 print("Training finished.\n")
+
+
+
 
 total_epochs, total_penalties = 0, 0
 episodes = 1
 
 for _ in range(episodes):
-    state = env.encode(3,1,2,1)
+    env.reset()
+    state=env.encode(3,1,2,0)
+    env.s=state
+    print("sss",state)
+    env.render()
     epochs, penalties, reward = 0, 0, 0
     
     done = False

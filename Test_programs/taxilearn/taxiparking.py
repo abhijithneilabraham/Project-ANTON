@@ -19,8 +19,8 @@ env=gym.make("Taxi-v2").env
 print('state space')
 state=env.encode(3,1,2,0)
 print('state',state)
-env.s=state
 
+env.s=state
 env.render()
 #env.s = 328  # set environment to illustration's state
 #
@@ -61,14 +61,14 @@ env.render()
 ##from IPython.display import clear_output
 ##from time import sleep
 ##
-##def print_frames(frames):
-##    for i, frame in enumerate(frames):
-##        clear_output(wait=True)
-##        print(frame['frame'])
-##        print(f"Timestep: {i + 1}")
-##        print(f"State: {frame['state']}")
-##        print(f"Action: {frame['action']}")
-##        print(f"Reward: {frame['reward']}")
-##        sleep(.1)
-##        
-##print_frames(frames)
+#def print_frames(frames):
+#    for i, frame in enumerate(frames):
+#        clear_output(wait=True)
+#        print(frame['frame'])
+#        print(f"Timestep: {i + 1}")
+#        print(f"State: {frame['state']}")
+#        print(f"Action: {frame['action']}")
+#        print(f"Reward: {frame['reward']}")
+#        sleep(.1)
+#        
+#print_frames(frames)
