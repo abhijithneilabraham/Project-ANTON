@@ -22,7 +22,7 @@ epsilon = 0.1
 all_epochs = []
 all_penalties = []
 
-for i in range(1, 100001):
+for i in range(1, 100):
     state = env.reset()
 
     epochs, penalties, reward, = 0, 0, 0
@@ -55,10 +55,10 @@ for i in range(1, 100001):
 print("Training finished.\n")
 
 total_epochs, total_penalties = 0, 0
-episodes = 100
+episodes = 1
 
 for _ in range(episodes):
-    state = env.reset()
+    state = env.encode(3,1,2,1)
     epochs, penalties, reward = 0, 0, 0
     
     done = False
@@ -66,6 +66,7 @@ for _ in range(episodes):
     while not done:
         action = np.argmax(q_table[state])
         state, reward, done, info = env.step(action)
+        env.render()
 
         if reward == -10:
             penalties += 1
